@@ -66,8 +66,14 @@ How it Works
 Data Storage
 Firebase Authentication is used to manage user accounts, while Firebase Firestore is used to store application data such as bookings.
 
-Installation and Setup
- Clone the repository:
+Getting Started
+-Make sure you have installed:
+.Node.js
+.npm
+.Git
+
+Installation
+Clone the repository:
 
 bash
 git clone YOUR_GITHUB_REPOSITORY_URL
