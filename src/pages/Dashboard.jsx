@@ -1,325 +1,64 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-
-import {
-  CalendarDays,
-  Clock,
-  CheckCircle,
-  LogOut,
-  User,
-  MapPin,
-} from "lucide-react";
-
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-
-import { useAuth } from "../context/AuthContext";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { Link } from "react-router-dom";
 
 function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
   const [bookings, setBookings] = useState([]);
-  const [loadingBookings, setLoadingBookings] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadBookings() {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        setBookings([]);
-        setLoadingBookings(false);
+        setLoading(false);
         return;
       }
-
       try {
-        const bookingsQuery = query(
-          collection(db, "bookings"),
-          where("userId", "==", user.uid)
-        );
-
-        const snapshot = await getDocs(bookingsQuery);
-
-        const bookingList = snapshot.docs.map(
-          (document) => ({
-            id: document.id,
-            ...document.data(),
-          })
-        );
-
-        setBookings(bookingList);
-      } catch (error) {
-        console.error(
-          "Error loading bookings:",
-          error
-        );
-      } finally {
-        setLoadingBookings(false);
+        const q = query(collection(db, "bookings"), where("userId", "==", user.uid));
+        const snap = await getDocs(q);
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setBookings(data);
+      } catch (err) {
+        console.error(err);
       }
-    }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-    loadBookings();
-  }, [user]);
+  const total = bookings.length;
+  const upcoming = bookings.filter(b => b.status === "pending").length;
+  const completed = bookings.filter(b => b.status === "completed").length;
 
-  async function handleLogout() {
-    await logout();
-    navigate("/");
-  }
-
-  const totalBookings = bookings.length;
-
-  const completedBookings = bookings.filter(
-    (booking) =>
-      booking.status === "Completed"
-  ).length;
-
-  const upcomingBookings = bookings.filter(
-    (booking) =>
-      booking.status !== "Completed"
-  ).length;
+  if (loading) return <p style={{ padding: "30px" }}>Loading bookings...</p>;
 
   return (
-    <section className="dashboard">
-
-      {/* HEADER */}
-
-      <div className="dashboard-header">
-
-        <div>
-          <p>MY ACCOUNT</p>
-
-          <h1>
-            Welcome back 
-          </h1>
-
-          <span>
-            Manage your ServiceHub bookings here.
-          </span>
-        </div>
-
-        <div className="dashboard-actions">
-
-          <Link
-            to="/services"
-            className="book-btn"
-          >
-            Book a Service
-          </Link>
-
-          <button
-            onClick={handleLogout}
-            className="logout-btn"
-          >
-            <LogOut size={17} />
-            Logout
-          </button>
-
-        </div>
-
+    <div style={{ padding: "30px", maxWidth: "1100px", margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px" }}>
+        <div style={{ border: "1px solid #ddd", padding: "20px", borderRadius: "12px" }}><p>Total Bookings</p><h2>{total}</h2></div>
+        <div style={{ border: "1px solid #ddd", padding: "20px", borderRadius: "12px" }}><p>Upcoming</p><h2>{upcoming}</h2></div>
+        <div style={{ border: "1px solid #ddd", padding: "20px", borderRadius: "12px" }}><p>Completed</p><h2>{completed}</h2></div>
       </div>
 
-
-      {/* USER */}
-
-      <div className="dashboard-user">
-
-        <div className="user-icon">
-          <User size={24} />
-        </div>
-
-        <div>
-          <span>Logged in as</span>
-
-          <strong>
-            {user?.email}
-          </strong>
-        </div>
-
-      </div>
-
-
-      {/* STATS */}
-
-      <div className="stats-grid">
-
-        <div className="stat-card">
-          <CalendarDays />
-
-          <span>
-            Total Bookings
-          </span>
-
-          <strong>
-            {totalBookings}
-          </strong>
-        </div>
-
-
-        <div className="stat-card">
-          <Clock />
-
-          <span>
-            Upcoming
-          </span>
-
-          <strong>
-            {upcomingBookings}
-          </strong>
-        </div>
-
-
-        <div className="stat-card">
-          <CheckCircle />
-
-          <span>
-            Completed
-          </span>
-
-          <strong>
-            {completedBookings}
-          </strong>
-        </div>
-
-      </div>
-
-
-      {/* BOOKINGS */}
-
-      <div className="dashboard-card">
-
-        <div className="dashboard-card-header">
-
-          <div>
-            <h2>
-              My Bookings
-            </h2>
-
-            <p>
-              Your actual ServiceHub bookings.
-            </p>
+      <div style={{ marginTop: "30px" }}>
+        <h2>My Bookings</h2>
+        {bookings.length === 0 ? (
+          <div style={{ textAlign: "center", marginTop: "40px" }}>
+            <p>No bookings yet</p>
+            <p>You haven't booked a service yet</p>
+            <Link to="/services" style={{ background: "black", color: "white", padding: "10px 20px", borderRadius: "8px", display: "inline-block", marginTop: "15px" }}>Find a Service</Link>
           </div>
-
-          <Link to="/services">
-            Book another
-          </Link>
-
-        </div>
-
-
-        {loadingBookings ? (
-          <div className="booking-empty">
-            <p>
-              Loading your bookings...
-            </p>
-          </div>
-        ) : bookings.length === 0 ? (
-
-          <div className="booking-empty">
-
-            <CalendarDays size={35} />
-
-            <h3>
-              No bookings yet
-            </h3>
-
-            <p>
-              You haven't booked a service yet.
-            </p>
-
-            <Link
-              to="/services"
-              className="book-btn"
-            >
-              Find a Service
-            </Link>
-
-          </div>
-
         ) : (
-
-          bookings.map((booking) => (
-
-            <div
-              className="booking-row"
-              key={booking.id}
-            >
-
-              <div className="booking-details">
-
-                <div className="booking-icon">
-                  <CalendarDays size={20} />
-                </div>
-
-                <div>
-
-                  <strong>
-                    {booking.serviceTitle}
-                  </strong>
-
-                  <p>
-                    {booking.provider}
-                  </p>
-
-                  <small>
-                    <MapPin size={13} />
-                    {booking.location}
-                  </small>
-
-                  <small>
-                    Date: {booking.date} •{" "}
-                    {booking.time}
-                  </small>
-
-                </div>
-
-              </div>
-
-              <span
-                className={
-                  booking.status === "Completed"
-                    ? "status completed"
-                    : "status"
-                }
-              >
-                {booking.status}
-              </span>
-
+          bookings.map(b => (
+            <div key={b.id} style={{ border: "1px solid #ddd", padding: "15px", margin: "10px 0", borderRadius: "10px" }}>
+              <h3>{b.serviceTitle}</h3>
+              <p>{b.date} at {b.time} - {b.status}</p>
             </div>
-
           ))
-
         )}
-
       </div>
-
-
-      {/* CTA */}
-
-      <div className="dashboard-cta">
-
-        <h2>
-          Need another service?
-        </h2>
-
-        <p>
-          Find a trusted professional and book your
-          next service in just a few clicks.
-        </p>
-
-        <Link
-          to="/services"
-          className="book-btn"
-        >
-          Explore Services
-        </Link>
-
-      </div>
-
-    </section>
+    </div>
   );
 }
 

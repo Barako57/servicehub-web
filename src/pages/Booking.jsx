@@ -1,15 +1,31 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+
 import { services } from "../data/services";
+import { db } from "../firebase";
+import { useAuth } from "../context/AuthContext";
 
 function Booking() {
   const { id } = useParams();
+  const { user } = useAuth();
 
   const service = services.find(
     (item) => item.id === Number(id)
   );
 
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    location: "",
+    date: "",
+    time: "",
+    message: "",
+  });
 
   if (!service) {
     return (
@@ -23,10 +39,55 @@ function Booking() {
     );
   }
 
-  function handleSubmit(event) {
+  function handleChange(event) {
+    const { id, value } = event.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [id]: value,
+    }));
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    setSubmitted(true);
+    setError("");
+
+    if (!user) {
+      setError("Please log in before booking a service.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await addDoc(collection(db, "bookings"), {
+        userId: user.uid,
+
+        serviceId: service.id,
+        serviceTitle: service.title,
+        provider: service.provider || "ServiceHub Provider",
+
+        name: formData.name,
+        phone: formData.phone,
+        location: formData.location,
+        date: formData.date,
+        time: formData.time,
+        message: formData.message,
+
+        price: service.price,
+        status: "Upcoming",
+
+        createdAt: serverTimestamp(),
+      });
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Error saving booking:", error);
+      setError("Booking could not be saved. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (submitted) {
@@ -92,6 +153,8 @@ function Booking() {
             id="name"
             type="text"
             placeholder="Enter your full name"
+            value={formData.name}
+            onChange={handleChange}
             required
           />
 
@@ -103,6 +166,8 @@ function Booking() {
             id="phone"
             type="tel"
             placeholder="07XXXXXXXX"
+            value={formData.phone}
+            onChange={handleChange}
             required
           />
 
@@ -114,6 +179,8 @@ function Booking() {
             id="location"
             type="text"
             placeholder="Where should the service be done?"
+            value={formData.location}
+            onChange={handleChange}
             required
           />
 
@@ -124,6 +191,8 @@ function Booking() {
           <input
             id="date"
             type="date"
+            value={formData.date}
+            onChange={handleChange}
             required
           />
 
@@ -134,6 +203,8 @@ function Booking() {
           <input
             id="time"
             type="time"
+            value={formData.time}
+            onChange={handleChange}
             required
           />
 
@@ -143,9 +214,17 @@ function Booking() {
 
           <textarea
             id="message"
-            placeholder="messange..."
+            placeholder="Message..."
             rows="4"
+            value={formData.message}
+            onChange={handleChange}
           />
+
+          {error && (
+            <p className="error-message">
+              {error}
+            </p>
+          )}
 
           <div className="booking-summary">
             <span>Service</span>
@@ -162,8 +241,11 @@ function Booking() {
           <button
             type="submit"
             className="book-btn"
+            disabled={loading}
           >
-            Confirm Booking
+            {loading
+              ? "Saving Booking..."
+              : "Confirm Booking"}
           </button>
         </form>
       </div>
