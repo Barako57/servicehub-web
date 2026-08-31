@@ -91,6 +91,17 @@ bash
 npm run dev
 Open the local URL displayed by Vite in your browser
 
+DEPLOYMENT
+ServiceHub can be deployed using Vercel.
+Deployment steps
+Push the project to GitHub.
+Sign in to Vercel.
+Import the GitHub repository.
+Select Vite as the framework if it is not detected automatically.
+Add the required environment variables.
+Click Deploy.
+Vercel will build and deploy the application.
+
  Example User Flow
 Register/Login → Browse Services → Select Service → View Provider Details → Book Service → Enter Location & Additional Information → Confirm Booking → View Booking on Dashboard
 
