@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
   ShieldCheck,
@@ -11,8 +12,25 @@ import TestimonialCard from "../components/TestimonialCard";
 import { services } from "../data/services";
 
 function Home() {
+  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+
+    const query = search.trim();
+
+    if (!query) {
+      navigate("/services");
+      return;
+    }
+
+    navigate(`/services?search=${encodeURIComponent(query)}`);
+  };
+
   return (
     <>
+      {/* HERO */}
       <section className="hero">
         <div className="hero-content">
           <p className="badge">Trusted local services</p>
@@ -26,32 +44,41 @@ function Home() {
             Quick, easy and secure.
           </p>
 
-          <div className="search-box">
+          {/* WORKING SEARCH */}
+          <form className="search-box" onSubmit={handleSearch}>
             <Search size={21} />
 
             <input
               type="text"
               placeholder="What service do you need?"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
 
-            <Link to="/services">Search</Link>
-          </div>
+            <button type="submit">
+              Search
+            </button>
+          </form>
 
           <div className="trust-row">
             <span>
-              <ShieldCheck size={18} /> Trusted providers
+              <ShieldCheck size={18} />
+              Trusted providers
             </span>
 
             <span>
-              <BadgeCheck size={18} /> Verified services
+              <BadgeCheck size={18} />
+              Verified services
             </span>
 
             <span>
-              <Clock size={18} /> Easy booking
+              <Clock size={18} />
+              Easy booking
             </span>
           </div>
         </div>
 
+        {/* HERO CARD */}
         <div className="hero-card">
           <div className="hero-card-top">
             <span>Popular today</span>
@@ -67,14 +94,18 @@ function Home() {
             <span>from</span>
           </div>
 
-          <Link to="/services/1">Book service →</Link>
+          <Link to="/services/1">
+            Book service →
+          </Link>
         </div>
       </section>
 
+      {/* POPULAR SERVICES */}
       <section className="services-section">
         <div className="section-heading">
           <p>WHAT WE OFFER</p>
           <h2>Popular Services</h2>
+
           <span>
             Find trusted professionals for your everyday needs.
           </span>
@@ -82,21 +113,33 @@ function Home() {
 
         <div className="services-grid">
           {services.map((service) => (
-            <ServiceCard key={service.id} service={service} />
+            <ServiceCard
+              key={service.id}
+              service={service}
+            />
           ))}
         </div>
 
         <div className="center-button">
-          <Link to="/services" className="outline-btn">
+          <Link
+            to="/services"
+            className="outline-btn"
+          >
             View all services
           </Link>
         </div>
       </section>
 
-      <section className="how-section" id="how-it-works">
+      {/* HOW IT WORKS */}
+      <section
+        className="how-section"
+        id="how-it-works"
+      >
         <div className="section-heading">
           <p>HOW IT WORKS</p>
+
           <h2>Get your service in 3 easy steps</h2>
+
           <span>
             Finding the right professional has never been easier.
           </span>
@@ -105,7 +148,9 @@ function Home() {
         <div className="steps-grid">
           <div className="step-card">
             <div className="step-number">01</div>
+
             <h3>Search</h3>
+
             <p>
               Search for the service you need and discover
               available professionals.
@@ -114,7 +159,9 @@ function Home() {
 
           <div className="step-card">
             <div className="step-number">02</div>
+
             <h3>Choose</h3>
+
             <p>
               Compare prices, ratings and reviews to choose
               the right professional.
@@ -123,7 +170,9 @@ function Home() {
 
           <div className="step-card">
             <div className="step-number">03</div>
+
             <h3>Book</h3>
+
             <p>
               Select your preferred date and time and book
               your service securely.
@@ -132,10 +181,13 @@ function Home() {
         </div>
       </section>
 
+      {/* TESTIMONIALS */}
       <section className="testimonials-section">
         <div className="section-heading">
           <p>CUSTOMER REVIEWS</p>
+
           <h2>What our customers say</h2>
+
           <span>
             Real experiences from people using ServiceHub.
           </span>
@@ -159,9 +211,15 @@ function Home() {
         </div>
       </section>
 
-      <section className="provider-section" id="provider">
+      {/* PROVIDER */}
+      <section
+        className="provider-section"
+        id="provider"
+      >
         <div className="provider-content">
-          <p className="provider-label">GROW YOUR BUSINESS</p>
+          <p className="provider-label">
+            GROW YOUR BUSINESS
+          </p>
 
           <h2>Are you a service professional?</h2>
 
@@ -171,7 +229,10 @@ function Home() {
             bookings.
           </p>
 
-          <Link to="/register" className="provider-btn">
+          <Link
+            to="/register"
+            className="provider-btn"
+          >
             Become a Provider →
           </Link>
         </div>
